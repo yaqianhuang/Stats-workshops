@@ -1,0 +1,147 @@
+---
+title: "Bayesian_demo"
+author: "Yaqian Huang"
+date: "2023-09-02"
+output: html_document
+---
+
+```{r setup, include=FALSE,message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(brms)
+library(rstan)
+library(bayestestR)
+library(bayesplot)
+library(tidyverse)
+
+```
+
+## Data set of voicing of glottal fricatives
+### 335 tokens of /h/ in 91 languages and 35 tokens of /ɦ/ in 15 languages at the word-initial position 
+
+```{r loaddf, message=FALSE, warning=FALSE}
+df <- read_csv('df.csv')
+
+head(df)
+```
+
+## brms model
+
+```{r fitdf,cache=TRUE,warning=FALSE,message=FALSE}
+
+priors_weak <- c(
+  # prior for the Intercept (= the reference level)
+  prior(normal(0.2, 1), class = Intercept),
+  # prior for the fixed effect coefficient for H
+  prior(normal(0.2, .5), class = b, coef = lartypeH),
+  # prior for the residual variance for gaussian()
+  prior(cauchy(0, 0.1), class = sigma)
+)
+
+set.seed(62938)
+mod <- brm(formula=norm.soe~dur+lartype+(1|family)+(1|area),data=df,
+               family = gaussian(), prior = priors_weak,
+               save_pars = save_pars(all = T),
+               iter=10000,warmup=2000,
+               control = list(adapt_delta = 0.999)) # for higher flexibility & treedepth
+
+```
+
+### Summarize the model fit
+
+```{r summarymod}
+summary(mod)
+```
+
+Extract samples from fitted model
+
+```{r}
+as_draws_df(mod)
+```
+
+
+### Visualize distributions of estimates and effects
+
+```{r plotmod}
+plot(mod)
+
+mcmc_plot(mod)+theme_bw(base_size = 18)
+```
+
+### Posterior predictive check
+
+```{r ppcheckmod}
+# Posterior predictive check:
+pp_check(mod, ndraws=100, type='dens_overlay')+theme_bw(base_size = 18)
+
+pp_check(mod, ndraws=11, type='hist')
+
+# Plot posterior predictive distribution of statistical summaries:
+pp_check(mod, ndraws = 100, type = "stat", stat = "mean")+theme_bw(base_size = 18)
+
+# Plot prior predictive distribution of statistical summaries:
+pp_check(mod, ndraws = 100, type = "stat", stat = "mean",
+         prefix = "ppd")+theme_bw(base_size = 18)
+```
+
+### Calculate Bayes factor
+
+```{r bffit, cache=TRUE,warning=FALSE,message=FALSE}
+
+priors_weak0 <- c(
+  # prior for the Intercept (= the reference level)
+  prior(normal(0.2, 1), class = Intercept),
+  # prior for the residual variance
+  prior(cauchy(0, 0.1), class = sigma)
+)
+
+set.seed(62938)
+
+mod0 <- brm(formula=norm.soe~dur+(1|family)+(1|area),data=df,
+               family = gaussian(), prior = priors_weak0,
+               save_pars = save_pars(all = T),
+               iter=10000,warmup=2000,
+               control = list(adapt_delta = 0.999)) # for higher flexibility & treedepth
+
+options("mc.cores" = 5)
+
+bayes_factor(
+    x1 = mod,
+    x2 = mod0,
+    silent = TRUE,
+    repetitions = 10,
+    cores = getOption("mc.cores")
+)
+
+```
+
+Calculate 95% highest density interval for uncertainty
+
+```{r hdi}
+# 95% HDI
+hdi(mod)
+plot(hdi(mod))+theme_bw(base_size = 18)
+
+```
+
+Calculate probability of direction for effect existence
+
+```{r pdirection}
+
+# probability of direction
+p_direction(mod)
+plot(p_direction(mod))+theme_bw(base_size = 18)
+
+# convert to p-value in corresponding lmer model
+pd_to_p(pd = p_direction(mod)$pd[3])
+
+```
+
+Calculate Region of Practical Equivalence for effect significance
+
+```{r rope}
+rope(mod)
+plot(rope(mod))+theme_bw(base_size = 18)
+
+```
+

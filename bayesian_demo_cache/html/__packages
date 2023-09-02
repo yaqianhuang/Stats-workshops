@@ -1,0 +1,15 @@
+Rcpp
+brms
+StanHeaders
+rstan
+bayestestR
+bayesplot
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats

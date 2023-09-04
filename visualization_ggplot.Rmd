@@ -1,0 +1,223 @@
+---
+title: "Visualization_ggplot"
+author: "Yaqian Huang"
+date: "2023-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE,message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+## Dataset of voicing of glottal consonants (Garellek et al., 2021)
+
+```{r loaddf, message=FALSE, warning=FALSE}
+df <- read_csv('df-vis.csv')
+
+df.means <- df %>% group_by(language,Filename,Speaker,label,dur,lartype,syltype,syltypegs,family,area,position)%>% 
+  select(norm.soe,praat_tier2_duration,percent_voiceless_laryngeal)%>%
+  summarise_if(is.numeric, mean, na.rm = T)
+
+head(df)
+head(df.means)
+```
+
+## set plot style
+
+```{r, message=FALSE, warning=FALSE}
+
+style <- list(
+        theme_bw(base_size = 14),
+        theme(
+                aspect.ratio     = .8,
+                legend.position  = "none",
+                strip.background = element_blank(),
+                strip.text       = element_text(color = "black", hjust = 0, size = 11),
+                panel.border     = element_rect(color = "black", fill = NA),
+                axis.text.x = element_text(angle=45, hjust=1)
+        )
+)
+
+style2 <- list(
+        theme_bw(base_size = 14),
+        theme(
+                aspect.ratio     = .8,
+                strip.background = element_blank(),
+                strip.text       = element_text(color = "black", hjust = 0, size = 11),
+                panel.border     = element_rect(color = "black", fill = NA),
+        )
+)
+        
+```
+
+
+## Categorical ~ 0
+### What is the distribution of language family in the dataset? area?
+
+```{r, message=FALSE, warning=FALSE}
+# barplot of counts
+# highlight sample size when n is small
+
+df %>% count(area)
+ggplot(df, aes(x=area, fill=area)) + 
+  geom_bar()+style
+  
+# plot only top 10 language family (with NA)
+df %>% count(family) %>% arrange(desc(n)) %>% head(11)
+
+df %>% count(family) %>% arrange(desc(n)) %>% head(11) %>% 
+  ggplot(aes(x=family, y=n, fill = family))+
+  geom_bar(stat='identity')+style
+
+# proportion
+# easier interpretation
+
+df %>% group_by(area)%>%
+  summarize(n = n())%>%
+  mutate(proportion=prop.table(n))%>%
+  ggplot(aes(x=area, y=proportion, fill=area)) + 
+  geom_bar(stat = 'identity')+style
+
+df %>% count(family) %>% arrange(desc(n)) %>% head(11) %>%
+  mutate(proportion=prop.table(n)) %>% 
+  ggplot(aes(x=family, y=proportion, fill = family))+
+  geom_bar(stat='identity')+style
+
+```
+
+## Numerical ~ 0
+### What is the distribution of norm.soe?
+
+```{r, message=FALSE, warning=FALSE}
+# histogram
+den <- ggplot(df, aes(x=norm.soe))+
+  geom_histogram()+
+    ggtitle('histogram')+style2
+  
+# smoothed density
+smo <- ggplot(df, aes(x=norm.soe))+
+  geom_density(fill='gray', alpha=0.5)+
+    ggtitle('density')+style2
+
+gridExtra::grid.arrange(den, smo, nrow=1)
+```
+
+## Numerical ~ Numerical
+### What is the relationship between norm.soe and percentage of voicing?
+
+```{r, message=FALSE, warning=FALSE}
+# scatterplot
+sca <- ggplot(df.means,aes(x=100-percent_voiceless_laryngeal, y=norm.soe, alpha=0.5)) + 
+  geom_point(size=0.5, position=position_jitter(0.25))+
+  scale_x_continuous('% voicing')+
+  style2+theme(legend.position = 'none')
+
+# scatterplot + fitted lm through smooth
+scalm <- ggplot(df.means,aes(x=100-percent_voiceless_laryngeal, y=norm.soe, alpha=0.5)) + 
+  geom_point(size=0.5, position=position_jitter(0.25))+
+  geom_smooth(method = 'lm',na.rm = T)+
+  scale_x_continuous('% voicing')+
+  style2+theme(legend.position = 'none')
+
+
+gridExtra::grid.arrange(sca, scalm, nrow=1)
+
+```
+
+## Numerical ~ Categorical
+### How does mean norm.soe vary across voiceless and voiced glottal fricatives and breathy vowels?
+
+```{r, message=FALSE, warning=FALSE}
+# boxplot
+box <- ggplot(df.means%>%filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC")), aes(x=lartype, color=lartype, fill=lartype, y=norm.soe))+
+  geom_boxplot(alpha=0.5, outlier.alpha = 0.1)+
+  ggtitle('Boxplot')+
+  style2+theme(legend.position = 'none',aspect.ratio = 1.5)
+
+
+# violin; large n
+vio <- ggplot(df.means%>%filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC")), aes(x=lartype, color=lartype, fill=lartype, y=norm.soe))+
+  geom_violin(alpha=.5,color='black')+
+  ggtitle('Violin')+
+  style2+theme(legend.position = 'none',aspect.ratio = 1.5)
+
+# jitter; small n; show all data points
+jit <- ggplot(df.means%>%filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC")), aes(x=lartype, color=lartype, fill=lartype, y=norm.soe))+
+  geom_jitter(size=0.7, alpha=0.5)+
+  ggtitle('Jittered')+
+  style2+theme(legend.position = 'none',aspect.ratio = 1.5)
+
+# bar plot + error bar
+bar <- ggplot(df.means%>%filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC")), aes(x=lartype, fill=lartype, y=norm.soe,alpha=0.5))+
+  stat_summary(fun.y = mean, 
+               geom="bar")+
+  stat_summary(fun.data = mean_se,
+               geom="errorbar", 
+               width=0.5)+
+  ggtitle('Barplot')+
+  style2+theme(legend.position = 'none',aspect.ratio = 1.5)
+
+gridExtra::grid.arrange(bar, jit, vio, box, nrow=1)
+```
+
+## Numerical ~ Numerical + Categorical
+### How does norm.soe vary over the time course and across voiceless and voiced glottal fricatives and breathy vowels?
+
+```{r, message=FALSE, warning=FALSE}
+# splines
+# color coded
+df %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
+        ggplot(aes(prop.time, norm.soe, color = lartype))+
+        geom_smooth() + style2
+
+```
+
+
+## Numerical ~ Categorical + Categorical
+### How does mean norm.soe vary across voiceless and voiced glottal fricatives and breathy vowels, and word positions?
+
+```{r, message=FALSE, warning=FALSE}
+mean_ci <- function(x){
+  m = mean(x,na.rm=T)
+  se = sd(x,na.rm=T)/sqrt(length(x))
+  ql = qnorm(1-0.025)
+  c('y'=m, 'ymin'=m-ql*se, 'ymax'=m+ql*se)
+}
+
+# violin + jitter + pointrange
+
+df.means %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
+  mutate(position = factor(position,levels=c('Initial','Medial','Final')))%>%
+ggplot(aes(x=lartype,y=norm.soe ,color=lartype))+
+  geom_violin(alpha=0.7,na.rm = T,scale = "width")+
+  geom_jitter(height=0,width=0.05,size=.3,aes(color=lartype,fill=lartype))+
+  stat_summary(fun.data = mean_ci,
+               geom="pointrange", 
+               fatten = 1.5,
+               position=position_dodge(width=0.9),
+               size=2,shape=21,
+               color="black",
+               fill="white")+
+  facet_wrap(~position)+
+  style2+theme(legend.position = "none",axis.title.x = element_blank()
+  )
+
+
+```
+
+## Numerical ~ Numerical + 2*Categorial
+### How does norm.soe vary over the time course and across voiceless and voiced glottal fricatives and breathy vowels, and word positions?
+
+
+```{r, message=FALSE, warning=FALSE}
+df %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
+  mutate(position = factor(position,levels=c('Initial','Medial','Final')))%>%
+        ggplot(aes(prop.time, norm.soe, color = lartype)) +
+        geom_smooth() +
+        facet_wrap(~ position, scales = "free_x") + style2
+
+```
+

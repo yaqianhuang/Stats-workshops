@@ -16,8 +16,9 @@ library(tidyverse)
 
 ```
 
-## Data set of voicing of glottal fricatives
-### 335 tokens of /h/ in 91 languages and 35 tokens of /ɦ/ in 15 languages at the word-initial position 
+## Dataset of voicing of glottal fricatives
+### 335 tokens of /h/ in 91 languages and 35 tokens of /ɦ/ in 15 languages at the word-initial position
+### research question: to what extent does voicing intensity differ in voiceless and voiced glottal fricatives at the word-initial position? 
 
 ```{r loaddf, message=FALSE, warning=FALSE}
 df <- read_csv('df.csv')

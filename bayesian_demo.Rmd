@@ -17,7 +17,7 @@ library(tidyverse)
 ```
 
 ## Dataset of voicing of glottal fricatives
-### 335 tokens of /h/ in 91 languages and 35 tokens of /ɦ/ in 15 languages at the word-initial position
+### 335 tokens of [h] in 91 languages and 35 tokens of [ɦ] in 15 languages at the word-initial position
 ### research question: to what extent does voicing intensity differ in voiceless and voiced glottal fricatives at the word-initial position? 
 
 ```{r loaddf, message=FALSE, warning=FALSE}
@@ -116,7 +116,9 @@ bayes_factor(
 
 ```
 
-Calculate 95% highest density interval for uncertainty
+### Calculate 95% highest density interval for uncertainty
+
+All points within this interval have a higher probability density than points outside the interval. The HDI can be used as Credible Interval (CI) to characterize uncertainty of posterior distributions.
 
 ```{r hdi}
 # 95% HDI
@@ -125,7 +127,9 @@ plot(hdi(mod))+theme_bw(base_size = 18)
 
 ```
 
-Calculate probability of direction for effect existence
+### Calculate probability of direction (pd) for effect existence
+
+Pd can be interpreted as the probability (expressed in percentage) that a parameter (described by its posterior distribution) is strictly positive or negative (whichever is the most probable). It is mathematically defined as the proportion of the posterior distribution that is of the median's sign. Although differently expressed, this index is fairly similar (i.e., is strongly correlated) to the frequentist p-value.
 
 ```{r pdirection}
 
@@ -138,7 +142,9 @@ pd_to_p(pd = p_direction(mod)$pd[3])
 
 ```
 
-Calculate Region of Practical Equivalence for effect significance
+### Calculate Region of Practical Equivalence (ROPE) for effect significance
+
+ROPE is a region corresponding to a “null” hypothesis. Rather than concluding that an effect is present when it simply differs from zero, we would conclude that the probability of being outside a specific range (ROPE) that can be considered as “practically no effect” (i.e., a negligible magnitude) is sufficient.
 
 ```{r rope}
 rope(mod)

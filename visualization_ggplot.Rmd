@@ -12,6 +12,10 @@ library(tidyverse)
 
 ```
 
+## Visualization principles
+
+Graphical excellence is the well-designed presentation of interesting data---a matter of substance, of **statistics**, and of **design** ... [It] consists of complex ideas communicated with **clarity**, **precision**, and **efficiency**. ... [It] is that which gives to the viewer the greatest number of ideas in the shortest time with the least ink in the smallest space ... [It] is nearly always multivariate ... And graphical excellence requires telling the **truth** about the data. (Tufte, 1983, p. 51).
+
 ## Dataset of voicing of glottal consonants (Garellek et al., 2021)
 
 ```{r loaddf, message=FALSE, warning=FALSE}
@@ -53,9 +57,9 @@ style2 <- list(
         
 ```
 
+## Categorical \~ 0
 
-## Categorical ~ 0
-### What is the distribution of language family in the dataset? area?
+### What is the distribution of area of languages in the dataset? language family?
 
 ```{r, message=FALSE, warning=FALSE}
 # barplot of counts
@@ -88,8 +92,9 @@ df %>% count(family) %>% arrange(desc(n)) %>% head(11) %>%
 
 ```
 
-## Numerical ~ 0
-### What is the distribution of norm.soe?
+## Numerical \~ 0
+
+### What is the distribution of normalized soe (voicing intensity measure)?
 
 ```{r, message=FALSE, warning=FALSE}
 # histogram
@@ -105,7 +110,8 @@ smo <- ggplot(df, aes(x=norm.soe))+
 gridExtra::grid.arrange(den, smo, nrow=1)
 ```
 
-## Numerical ~ Numerical
+## Numerical \~ Numerical
+
 ### What is the relationship between norm.soe and percentage of voicing?
 
 ```{r, message=FALSE, warning=FALSE}
@@ -127,7 +133,8 @@ gridExtra::grid.arrange(sca, scalm, nrow=1)
 
 ```
 
-## Numerical ~ Categorical
+## Numerical \~ Categorical
+
 ### How does mean norm.soe vary across voiceless and voiced glottal fricatives and breathy vowels?
 
 ```{r, message=FALSE, warning=FALSE}
@@ -163,7 +170,8 @@ bar <- ggplot(df.means%>%filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","
 gridExtra::grid.arrange(bar, jit, vio, box, nrow=1)
 ```
 
-## Numerical ~ Numerical + Categorical
+## Numerical \~ Numerical + Categorical
+
 ### How does norm.soe vary over the time course and across voiceless and voiced glottal fricatives and breathy vowels?
 
 ```{r, message=FALSE, warning=FALSE}
@@ -175,8 +183,8 @@ df %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
 
 ```
 
+## Numerical \~ Categorical + Categorical
 
-## Numerical ~ Categorical + Categorical
 ### How does mean norm.soe vary across voiceless and voiced glottal fricatives and breathy vowels, and word positions?
 
 ```{r, message=FALSE, warning=FALSE}
@@ -208,9 +216,9 @@ ggplot(aes(x=lartype,y=norm.soe ,color=lartype))+
 
 ```
 
-## Numerical ~ Numerical + 2*Categorial
-### How does norm.soe vary over the time course and across voiceless and voiced glottal fricatives and breathy vowels, and word positions?
+## Numerical \~ Numerical + 2\*Categorial
 
+### How does norm.soe vary over the time course and across voiceless and voiced glottal fricatives and breathy vowels, and word positions?
 
 ```{r, message=FALSE, warning=FALSE}
 df %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
@@ -220,4 +228,3 @@ df %>% filter(syltype %in% c("hV","HV","VhV","VHV","Vh","VH","Cbv","CbvC"))%>%
         facet_wrap(~ position, scales = "free_x") + style2
 
 ```
-
